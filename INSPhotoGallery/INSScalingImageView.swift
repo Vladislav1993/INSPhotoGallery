@@ -18,17 +18,6 @@
 //  limitations under the License.
 
 import UIKit
-private func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
-  switch (lhs, rhs) {
-  case let (l?, r?):
-    return l < r
-  case (nil, _?):
-    return true
-  default:
-    return false
-  }
-}
-
 
 class INSScalingImageView: UIScrollView {
     lazy var imageView: UIImageView = {
@@ -62,7 +51,7 @@ class INSScalingImageView: UIScrollView {
         updateZoomScale()
     }
     
-    override func didAddSubview(_ subview: UIView) {
+    override func didAddSubview(subview: UIView) {
         super.didAddSubview(subview)
         centerScrollViewContents()
     }
@@ -82,8 +71,8 @@ class INSScalingImageView: UIScrollView {
             horizontalInset = (bounds.width - contentSize.width) * 0.5;
         }
         
-        if (self.contentSize.height < bounds.height) {
-            verticalInset = (bounds.height - contentSize.height) * 0.5;
+        if (self.contentSize.height < CGRectGetHeight(bounds)) {
+            verticalInset = (CGRectGetHeight(bounds) - contentSize.height) * 0.5;
         }
         
         if (window?.screen.scale < 2.0) {
@@ -95,10 +84,10 @@ class INSScalingImageView: UIScrollView {
         self.contentInset = UIEdgeInsetsMake(verticalInset, horizontalInset, verticalInset, horizontalInset);
     }
     
-    private func updateImage(_ image: UIImage?) {
+    private func updateImage(image: UIImage?) {
         let size = image?.size ?? CGSize.zero
         
-        imageView.transform = CGAffineTransform.identity
+        imageView.transform = CGAffineTransformIdentity
         imageView.image = image
         imageView.frame = CGRect(origin: CGPoint.zero, size: size)
         self.contentSize = size
@@ -125,7 +114,7 @@ class INSScalingImageView: UIScrollView {
             //
             // This is enabled in scrollViewWillBeginZooming so panning while zoomed-in
             // is unaffected.
-            self.panGestureRecognizer.isEnabled = false
+            self.panGestureRecognizer.enabled = false
         }
     }
 }

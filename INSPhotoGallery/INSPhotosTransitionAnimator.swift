@@ -53,23 +53,23 @@ class INSPhotosTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioni
         }
     }
     
-    func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
+    func transitionDuration(transitionContext: UIViewControllerContextTransitioning?) -> NSTimeInterval {
         if shouldPerformZoomingAnimation {
             return animationDurationWithZooming
         }
         return animationDurationWithoutZooming
     }
     
-    func fadeDurationForTransitionContext(_ transitionContext: UIViewControllerContextTransitioning) -> TimeInterval {
+    func fadeDurationForTransitionContext(transitionContext: UIViewControllerContextTransitioning) -> NSTimeInterval {
         if shouldPerformZoomingAnimation {
-            return transitionDuration(using: transitionContext) * animationDurationFadeRatio
+            return transitionDuration(transitionContext) * animationDurationFadeRatio
         }
-        return transitionDuration(using: transitionContext)
+        return transitionDuration(transitionContext)
     }
     
     // MARK:- UIViewControllerAnimatedTransitioning
     
-    func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
+    func animateTransition(transitionContext: UIViewControllerContextTransitioning) {
         setupTransitionContainerHierarchyWithTransitionContext(transitionContext)
         
         // There is issue with startingView frame when performFadeAnimation
@@ -81,33 +81,33 @@ class INSPhotosTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioni
         performFadeAnimationWithTransitionContext(transitionContext)
     }
     
-    func setupTransitionContainerHierarchyWithTransitionContext(_ transitionContext: UIViewControllerContextTransitioning) {
+    func setupTransitionContainerHierarchyWithTransitionContext(transitionContext: UIViewControllerContextTransitioning) {
         
-        if let toView = transitionContext.view(forKey: UITransitionContextViewKey.to),
-           let toViewController = transitionContext.viewController(forKey: UITransitionContextViewControllerKey.to) {
-            toView.frame = transitionContext.finalFrame(for: toViewController)
-            let containerView = transitionContext.containerView
+        if let toView = transitionContext.viewForKey(UITransitionContextToViewKey),
+           let toViewController = transitionContext.viewControllerForKey(UITransitionContextToViewControllerKey) {
+            toView.frame = transitionContext.finalFrameForViewController(toViewController)
+            let containerView = transitionContext.containerView()
             
-            if !toView.isDescendant(of: containerView) {
+            if !toView.isDescendantOfView(containerView) {
                 containerView.addSubview(toView)
             }
         }
         
         if dismissing {
-            if let fromView = transitionContext.view(forKey: UITransitionContextViewKey.from) {
-                transitionContext.containerView.bringSubview(toFront: fromView)
+            if let fromView = transitionContext.viewForKey(UITransitionContextFromViewKey) {
+                transitionContext.containerView().bringSubviewToFront(fromView)
             }
         }
     }
     
-    func performFadeAnimationWithTransitionContext(_ transitionContext: UIViewControllerContextTransitioning) {
-        let fadeView = dismissing ? transitionContext.view(forKey: UITransitionContextViewKey.from) : transitionContext.view(forKey: UITransitionContextViewKey.to)
+    func performFadeAnimationWithTransitionContext(transitionContext: UIViewControllerContextTransitioning) {
+        let fadeView = dismissing ? transitionContext.viewForKey(UITransitionContextFromViewKey) : transitionContext.viewForKey(UITransitionContextToViewKey)
         let beginningAlpha: CGFloat = dismissing ? 1.0 : 0.0
         let endingAlpha: CGFloat = dismissing ? 0.0 : 1.0
         
         fadeView?.alpha = beginningAlpha
 
-        UIView.animate(withDuration: fadeDurationForTransitionContext(transitionContext), animations: { () -> Void in
+        UIView.animateWithDuration(fadeDurationForTransitionContext(transitionContext), animations: { () -> Void in
             fadeView?.alpha = endingAlpha
         }) { finished in
             if !self.shouldPerformZoomingAnimation {
@@ -116,9 +116,9 @@ class INSPhotosTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioni
         }
     }
     
-    func performZoomingAnimationWithTransitionContext(_ transitionContext: UIViewControllerContextTransitioning) {
+    func performZoomingAnimationWithTransitionContext(transitionContext: UIViewControllerContextTransitioning) {
         
-        let containerView = transitionContext.containerView
+        let containerView = transitionContext.containerView()
         guard let startingView = startingView, let endingView = endingView else {
             return
         }
@@ -133,7 +133,7 @@ class INSPhotosTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioni
         
         startingViewForAnimation.center = translatedStartingViewCenter
         
-        endingViewForAnimation.transform = endingViewForAnimation.transform.scaledBy(x: endingViewInitialTransform, y: endingViewInitialTransform)
+        endingViewForAnimation.transform = CGAffineTransformScale(endingViewForAnimation.transform, endingViewInitialTransform, endingViewInitialTransform)
         endingViewForAnimation.center = translatedStartingViewCenter
         endingViewForAnimation.alpha = 0.0
         
@@ -144,14 +144,14 @@ class INSPhotosTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioni
         endingView.alpha = 0.0
         startingView.alpha = 0.0
         
-        let fadeInDuration = transitionDuration(using: transitionContext) * animationDurationEndingViewFadeInRatio
-        let fadeOutDuration = transitionDuration(using: transitionContext) * animationDurationStartingViewFadeOutRatio
+        let fadeInDuration = transitionDuration(transitionContext) * animationDurationEndingViewFadeInRatio
+        let fadeOutDuration = transitionDuration(transitionContext) * animationDurationStartingViewFadeOutRatio
         
         // Ending view / starting view replacement animation
-        UIView.animate(withDuration: fadeInDuration, delay: 0.0, options: [.allowAnimatedContent,.beginFromCurrentState], animations: { () -> Void in
+        UIView.animateWithDuration(fadeInDuration, delay: 0.0, options: [.AllowAnimatedContent,.BeginFromCurrentState], animations: { () -> Void in
             endingViewForAnimation.alpha = 1.0
         }) { result in
-            UIView.animate(withDuration: fadeOutDuration, delay: 0.0, options: [.allowAnimatedContent,.beginFromCurrentState], animations: { () -> Void in
+            UIView.animateWithDuration(fadeOutDuration, delay: 0.0, options: [.AllowAnimatedContent,.BeginFromCurrentState], animations: { () -> Void in
                 startingViewForAnimation.alpha = 0.0
             }, completion: { result in
                 startingViewForAnimation.removeFromSuperview()
@@ -161,10 +161,10 @@ class INSPhotosTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioni
         let startingViewFinalTransform = 1.0 / endingViewInitialTransform
         let translatedEndingViewFinalCenter = endingView.ins_translatedCenterPointToContainerView(containerView)
         
-        UIView.animate(withDuration: transitionDuration(using: transitionContext), delay: 0.0, usingSpringWithDamping:CGFloat(zoomingAnimationSpringDamping), initialSpringVelocity:0, options: [.allowAnimatedContent,.beginFromCurrentState], animations: { () -> Void in
+        UIView.animateWithDuration(transitionDuration(transitionContext), delay: 0.0, usingSpringWithDamping:CGFloat(zoomingAnimationSpringDamping), initialSpringVelocity:0, options: [.AllowAnimatedContent,.BeginFromCurrentState], animations: { () -> Void in
             endingViewForAnimation.transform = finalEndingViewTransform
             endingViewForAnimation.center = translatedEndingViewFinalCenter
-            startingViewForAnimation.transform = startingViewForAnimation.transform.scaledBy(x: startingViewFinalTransform, y: startingViewFinalTransform)
+            startingViewForAnimation.transform = CGAffineTransformScale(startingViewForAnimation.transform, startingViewFinalTransform, startingViewFinalTransform)
             startingViewForAnimation.center = translatedEndingViewFinalCenter
             
         }) { result in
@@ -175,14 +175,14 @@ class INSPhotosTransitionAnimator: NSObject, UIViewControllerAnimatedTransitioni
         }
     }
     
-    func completeTransitionWithTransitionContext(_ transitionContext: UIViewControllerContextTransitioning) {
-        if transitionContext.isInteractive {
-            if transitionContext.transitionWasCancelled {
+    func completeTransitionWithTransitionContext(transitionContext: UIViewControllerContextTransitioning) {
+        if transitionContext.isInteractive() {
+            if transitionContext.transitionWasCancelled() {
                 transitionContext.cancelInteractiveTransition()
             } else {
                 transitionContext.finishInteractiveTransition()
             }
         }
-        transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
+        transitionContext.completeTransition(!transitionContext.transitionWasCancelled())
     }
 }

@@ -19,7 +19,7 @@
 
 import UIKit
 
-open class INSPhotoViewController: UIViewController, UIScrollViewDelegate {
+public class INSPhotoViewController: UIViewController, UIScrollViewDelegate {
     var photo: INSPhotoViewable
     
     var longPressGestureHandler: ((UILongPressGestureRecognizer) -> ())?
@@ -40,7 +40,7 @@ open class INSPhotoViewController: UIViewController, UIScrollViewDelegate {
     }()
     
     lazy private(set) var activityIndicator: UIActivityIndicatorView = {
-        let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .white)
+        let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .White)
         activityIndicator.startAnimating()
         return activityIndicator
     }()
@@ -58,17 +58,17 @@ open class INSPhotoViewController: UIViewController, UIScrollViewDelegate {
         scalingImageView.delegate = nil
     }
     
-    open override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         
         scalingImageView.delegate = self
         scalingImageView.frame = view.bounds
-        scalingImageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        scalingImageView.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         view.addSubview(scalingImageView)
         
         view.addSubview(activityIndicator)
         activityIndicator.center = CGPoint(x: view.bounds.midX, y: view.bounds.midY)
-        activityIndicator.autoresizingMask = [.flexibleTopMargin, .flexibleLeftMargin, .flexibleRightMargin, .flexibleBottomMargin]
+        activityIndicator.autoresizingMask = [.FlexibleTopMargin, .FlexibleLeftMargin, .FlexibleRightMargin, .FlexibleBottomMargin]
         activityIndicator.sizeToFit()
         
         view.addGestureRecognizer(doubleTapGestureRecognizer)
@@ -87,13 +87,13 @@ open class INSPhotoViewController: UIViewController, UIScrollViewDelegate {
 
     }
     
-    open override func viewWillLayoutSubviews() {
+    public override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
         scalingImageView.frame = view.bounds
     }
     
     private func loadThumbnailImage() {
-        view.bringSubview(toFront: activityIndicator)
+        view.bringSubviewToFront(activityIndicator)
         photo.loadThumbnailImageWithCompletionHandler { [weak self] (image, error) -> () in
             
             let completeLoading = {
@@ -104,10 +104,10 @@ open class INSPhotoViewController: UIViewController, UIScrollViewDelegate {
                 self?.loadFullSizeImage()
             }
             
-            if Thread.isMainThread {
+            if NSThread.isMainThread() {
                 completeLoading()
             } else {
-                DispatchQueue.main.async(execute: { () -> Void in
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in
                     completeLoading()
                 })
             }
@@ -115,31 +115,31 @@ open class INSPhotoViewController: UIViewController, UIScrollViewDelegate {
     }
     
     private func loadFullSizeImage() {
-        view.bringSubview(toFront: activityIndicator)
+        view.bringSubviewToFront(activityIndicator)
         self.photo.loadImageWithCompletionHandler({ [weak self] (image, error) -> () in
             let completeLoading = {
                 self?.activityIndicator.stopAnimating()
                 self?.scalingImageView.image = image    
             }
             
-            if Thread.isMainThread {
+            if NSThread.isMainThread() {
                 completeLoading()
             } else {
-                DispatchQueue.main.async(execute: { () -> Void in
+                dispatch_async(dispatch_get_main_queue(), { () -> Void in
                     completeLoading()
                 })
             }
         })
     }
     
-    @objc private func handleLongPressWithGestureRecognizer(_ recognizer: UILongPressGestureRecognizer) {
-        if recognizer.state == UIGestureRecognizerState.began {
+    @objc private func handleLongPressWithGestureRecognizer(recognizer: UILongPressGestureRecognizer) {
+        if recognizer.state == UIGestureRecognizerState.Began {
             longPressGestureHandler?(recognizer)
         }
     }
     
-    @objc private func handleDoubleTapWithGestureRecognizer(_ recognizer: UITapGestureRecognizer) {
-        let pointInView = recognizer.location(in: scalingImageView.imageView)
+    @objc private func handleDoubleTapWithGestureRecognizer(recognizer: UITapGestureRecognizer) {
+        let pointInView = recognizer.locationInView(scalingImageView.imageView)
         var newZoomScale = scalingImageView.maximumZoomScale
         
         if scalingImageView.zoomScale >= scalingImageView.maximumZoomScale || abs(scalingImageView.zoomScale - scalingImageView.maximumZoomScale) <= 0.01 {
@@ -153,24 +153,24 @@ open class INSPhotoViewController: UIViewController, UIScrollViewDelegate {
         let originY = pointInView.y - (height / 2.0)
         
         let rectToZoom = CGRect(x: originX, y: originY, width: width, height: height)
-        scalingImageView.zoom(to: rectToZoom, animated: true)
+        scalingImageView.zoomToRect(rectToZoom, animated: true)
     }
     
     // MARK:- UIScrollViewDelegate
     
-    open func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+    public func viewForZoomingInScrollView(scrollView: UIScrollView) -> UIView? {
         return scalingImageView.imageView
     }
     
-    open func scrollViewWillBeginZooming(_ scrollView: UIScrollView, with view: UIView?) {
-        scrollView.panGestureRecognizer.isEnabled = true
+    public func scrollViewWillBeginZooming(scrollView: UIScrollView, withView view: UIView?) {
+        scrollView.panGestureRecognizer.enabled = true
     }
     
-    open func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+    public func scrollViewDidEndZooming(scrollView: UIScrollView, withView view: UIView?, atScale scale: CGFloat) {
         // There is a bug, especially prevalent on iPhone 6 Plus, that causes zooming to render all other gesture recognizers ineffective.
         // This bug is fixed by disabling the pan gesture recognizer of the scroll view when it is not needed.
         if (scrollView.zoomScale == scrollView.minimumZoomScale) {
-            scrollView.panGestureRecognizer.isEnabled = false;
+            scrollView.panGestureRecognizer.enabled = false;
         }
     }
 }

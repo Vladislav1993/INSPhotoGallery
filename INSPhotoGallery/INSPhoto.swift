@@ -75,13 +75,11 @@ open class INSPhoto: INSPhotoViewable, Equatable {
     
     open func loadImageWithURL(_ url: URL?, completion: @escaping (_ image: UIImage?, _ error: NSError?) -> ()) {
         let session = URLSession(configuration: URLSessionConfiguration.default)
-        
         if let imageURL = url {
-            session.dataTask(with: imageURL, completionHandler: { (response: Data?, data: URLResponse?, error: NSError?) in
-                
+            session.dataTask(with: imageURL, completionHandler: { (response, data, error) in
                 DispatchQueue.main.async(execute: { () -> Void in
                     if error != nil {
-                        completion(nil, error)
+                        completion(nil, error as NSError?)
                     } else if let response = response, let image = UIImage(data: response) {
                         completion(image, nil)
                     } else {
@@ -89,8 +87,7 @@ open class INSPhoto: INSPhotoViewable, Equatable {
                     }
                     session.finishTasksAndInvalidate()
                 })
-                
-            } as! (Data?, URLResponse?, Error?) -> Void).resume()
+            }).resume()
         } else {
             completion(nil, NSError(domain: "INSPhotoDomain", code: -2, userInfo: [ NSLocalizedDescriptionKey: "Image URL not found."]))
         }
